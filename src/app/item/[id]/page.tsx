@@ -54,11 +54,7 @@ export default function ItemPage() {
     }
   );
 
-  const {
-    data: comments,
-    error: commentsError,
-    isLoading: commentsLoading,
-  } = useSWR<Comment[]>(
+  const { data: comments, isLoading: commentsLoading } = useSWR<Comment[]>(
     story?.kids ? `comments-${id}` : null,
     () => fetchComments(story!.kids!),
     {
