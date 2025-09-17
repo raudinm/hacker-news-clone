@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import useSWR from "swr";
 
 interface Comment {
   id: number;
@@ -10,6 +10,17 @@ interface Comment {
   kids?: number[];
 }
 
+// Fetcher for comment replies
+const fetchReplies = async (kids: number[]): Promise<Comment[]> => {
+  if (!kids || kids.length === 0) return [];
+  const replyPromises = kids.map((id) =>
+    fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((res) =>
+      res.json()
+    )
+  );
+  return Promise.all(replyPromises);
+};
+
 export default function CommentComponent({
   comment,
   level = 0,
@@ -17,7 +28,14 @@ export default function CommentComponent({
   comment: Comment;
   level?: number;
 }) {
-  const [replies, setReplies] = useState<Comment[]>([]);
+  const { data: replies, isLoading } = useSWR<Comment[]>(
+    comment.kids ? `replies-${comment.id}` : null,
+    () => fetchReplies(comment.kids!),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
 
   const timeAgo = (timestamp: number) => {
     const now = Date.now() / 1000;
@@ -30,25 +48,6 @@ export default function CommentComponent({
     if (hours > 0) return `${hours} hours ago`;
     return `${minutes} minutes ago`;
   };
-
-  useEffect(() => {
-    if (comment.kids) {
-      const fetchReplies = async () => {
-        try {
-          const replyPromises = comment.kids!.map((id) =>
-            fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(
-              (res) => res.json()
-            )
-          );
-          const repliesData: Comment[] = await Promise.all(replyPromises);
-          setReplies(repliesData);
-        } catch (error) {
-          console.error("Error fetching replies:", error);
-        }
-      };
-      fetchReplies();
-    }
-  }, [comment.kids]);
 
   if (!comment.text) return null; // deleted or no text
 
@@ -64,9 +63,13 @@ export default function CommentComponent({
         dangerouslySetInnerHTML={{ __html: comment.text }}
         className="text-sm"
       />
-      {replies.map((reply) => (
-        <CommentComponent key={reply.id} comment={reply} level={level + 1} />
-      ))}
+      {isLoading ? (
+        <div className="text-sm text-gray-500 mt-2">Loading replies...</div>
+      ) : (
+        replies?.map((reply) => (
+          <CommentComponent key={reply.id} comment={reply} level={level + 1} />
+        ))
+      )}
     </div>
   );
 }

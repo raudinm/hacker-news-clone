@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { useParams } from "next/navigation";
 import CommentComponent from "../../../components/Comment";
 
@@ -24,11 +24,48 @@ interface Comment {
   kids?: number[];
 }
 
+// Fetcher for individual items
+const fetchItem = (url: string) => fetch(url).then((res) => res.json());
+
+// Custom fetcher for comments
+const fetchComments = async (kids: number[]): Promise<Comment[]> => {
+  if (!kids || kids.length === 0) return [];
+  const commentPromises = kids.map((kidId) =>
+    fetch(`https://hacker-news.firebaseio.com/v0/item/${kidId}.json`).then(
+      (res) => res.json()
+    )
+  );
+  return Promise.all(commentPromises);
+};
+
 export default function ItemPage() {
   const { id } = useParams();
-  const [story, setStory] = useState<Story | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: story,
+    error: storyError,
+    isLoading: storyLoading,
+  } = useSWR<Story>(
+    id ? `https://hacker-news.firebaseio.com/v0/item/${id}.json` : null,
+    fetchItem,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  const {
+    data: comments,
+    error: commentsError,
+    isLoading: commentsLoading,
+  } = useSWR<Comment[]>(
+    story?.kids ? `comments-${id}` : null,
+    () => fetchComments(story!.kids!),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
 
   const timeAgo = (timestamp: number) => {
     const now = Date.now() / 1000;
@@ -42,35 +79,9 @@ export default function ItemPage() {
     return `${minutes} minutes ago`;
   };
 
-  useEffect(() => {
-    const fetchItem = async () => {
-      try {
-        const response = await fetch(
-          `https://hacker-news.firebaseio.com/v0/item/${id}.json`
-        );
-        const data: Story = await response.json();
-        setStory(data);
-        if (data.kids) {
-          const commentPromises = data.kids.map((kidId) =>
-            fetch(
-              `https://hacker-news.firebaseio.com/v0/item/${kidId}.json`
-            ).then((res) => res.json())
-          );
-          const commentsData: Comment[] = await Promise.all(commentPromises);
-          setComments(commentsData);
-        }
-      } catch (error) {
-        console.error("Error fetching item:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchItem();
-  }, [id]);
-
-  if (loading) return <div className="max-w-4xl mx-auto p-4">Loading...</div>;
-
-  if (!story)
+  if (storyLoading)
+    return <div className="max-w-4xl mx-auto p-4">Loading...</div>;
+  if (storyError || !story)
     return <div className="max-w-4xl mx-auto p-4">Story not found</div>;
 
   return (
@@ -97,12 +108,14 @@ export default function ItemPage() {
         />
       )}
       <h2 className="text-lg font-semibold mb-2">
-        Comments ({comments.length})
+        Comments ({comments?.length || 0})
       </h2>
-      {comments.length === 0 ? (
+      {commentsLoading ? (
+        <p>Loading comments...</p>
+      ) : comments && comments.length === 0 ? (
         <p>No comments yet.</p>
       ) : (
-        comments.map((comment) => (
+        comments?.map((comment) => (
           <CommentComponent key={comment.id} comment={comment} />
         ))
       )}
