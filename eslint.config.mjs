@@ -20,7 +20,10 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
     rules: {
+      "react/display-name": "off",
       "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/triple-slash-reference": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
     },
   },
 ];
