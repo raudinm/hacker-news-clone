@@ -42,5 +42,18 @@ module.exports = {
       lines: 70,
       statements: 70,
     },
+    // Layer-specific thresholds
+    "src/domain/**/*.ts": {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+    "src/application/**/*.ts": {
+      branches: 60,
+      functions: 60,
+      lines: 60,
+      statements: 60,
+    },
   },
 };

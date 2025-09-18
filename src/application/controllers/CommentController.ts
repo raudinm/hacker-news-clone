@@ -25,7 +25,7 @@ export class CommentController {
       console.error("Error in CommentController.getComments:", error);
       return {
         success: false,
-        error: "Failed to fetch comments",
+        error: "Failed to fetch story comments",
         data: [],
       };
     }
@@ -56,7 +56,7 @@ export class CommentController {
       console.error("Error in CommentController.getCommentsForStory:", error);
       return {
         success: false,
-        error: "Failed to fetch story comments",
+        error: "Failed to fetch comments",
         data: [],
       };
     }

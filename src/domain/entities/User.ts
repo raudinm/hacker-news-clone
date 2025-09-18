@@ -22,7 +22,7 @@ export class UserEntity implements User {
    */
   getAccountAge(): number {
     const now = Date.now() / 1000;
-    return Math.floor((now - this.created) / 86400);
+    return Math.max(0, Math.floor((now - this.created) / 86400));
   }
 
   /**
@@ -50,6 +50,10 @@ export class UserEntity implements User {
    * Checks if the user has an about section
    */
   hasAbout(): boolean {
-    return this.about !== undefined && this.about.trim() !== "";
+    return (
+      this.about !== undefined &&
+      this.about !== null &&
+      this.about.trim() !== ""
+    );
   }
 }

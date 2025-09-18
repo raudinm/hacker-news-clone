@@ -16,13 +16,21 @@ export class FetchCommentsUseCase implements IFetchCommentsUseCase {
   constructor(private readonly commentRepository: ICommentRepository) {}
 
   async execute(input: FetchCommentsInput): Promise<FetchCommentsOutput> {
-    if (!input.commentIds || input.commentIds.length === 0) {
+    if (
+      !input.commentIds ||
+      !Array.isArray(input.commentIds) ||
+      input.commentIds.length === 0
+    ) {
       return { comments: [] };
     }
 
     const comments = await this.commentRepository.getCommentsByIds(
       input.commentIds
     );
+
+    if (!comments || !Array.isArray(comments)) {
+      return { comments: [] };
+    }
 
     return {
       comments: comments.map(
