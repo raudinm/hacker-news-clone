@@ -3,8 +3,11 @@ import { StoryController, StoryPresenter, StoryViewModel } from "../index";
 
 const storyController = new StoryController();
 
-const fetchTopStories = async (limit: number): Promise<StoryViewModel[]> => {
-  const result = await storyController.getTopStories(limit);
+export const fetchTopStories = async (
+  limit: number,
+  controller = storyController
+): Promise<StoryViewModel[]> => {
+  const result = await controller.getTopStories(limit);
   if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch stories");
   }

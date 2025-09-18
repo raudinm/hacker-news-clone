@@ -11,20 +11,22 @@ import {
 const storyController = new StoryController();
 const commentController = new CommentController();
 
-const fetchStoryDetails = async (
-  storyId: number
+export const fetchStoryDetails = async (
+  storyId: number,
+  controller = storyController
 ): Promise<StoryViewModel | null> => {
-  const result = await storyController.getStoryDetails(storyId);
+  const result = await controller.getStoryDetails(storyId);
   if (!result.success || !result.data) {
     throw new Error(result.error || "Story not found");
   }
   return StoryPresenter.present(result.data);
 };
 
-const fetchCommentsForStory = async (
-  storyId: number
+export const fetchCommentsForStory = async (
+  storyId: number,
+  controller = commentController
 ): Promise<CommentViewModel[]> => {
-  const result = await commentController.getCommentsForStory(storyId);
+  const result = await controller.getCommentsForStory(storyId);
   if (!result.success || !result.data) {
     return [];
   }
