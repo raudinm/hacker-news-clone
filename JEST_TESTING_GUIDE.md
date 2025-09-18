@@ -37,7 +37,7 @@ The testing strategy follows Clean Architecture principles with layered testing:
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - Yarn package manager
 - Basic understanding of JavaScript/TypeScript and React/Next.js
 - Next.js project with TypeScript
