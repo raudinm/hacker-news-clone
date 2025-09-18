@@ -18,7 +18,21 @@ module.exports = {
     "<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}",
   ],
   transform: {
-    "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { presets: ["next/babel"] }],
+    "^.+\\.(js|jsx|ts|tsx)$": [
+      "babel-jest",
+      {
+        presets: [
+          [
+            "next/babel",
+            {
+              "preset-react": {
+                runtime: "automatic",
+              },
+            },
+          ],
+        ],
+      },
+    ],
   },
   moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json"],
   coverageThreshold: {

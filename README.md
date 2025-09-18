@@ -11,8 +11,6 @@ This project implements **Clean Architecture** to ensure separation of concerns,
 - **Infrastructure Layer**: External API clients and repository implementations
 - **Presentation Layer**: React components and UI logic
 
-For detailed information about the architecture, see [CLEAN_ARCHITECTURE_REFACTOR.md](./CLEAN_ARCHITECTURE_REFACTOR.md).
-
 ## 🚀 Features
 
 - **Real-time Story Feed**: Displays the top 30 stories from Hacker News with automatic updates
@@ -141,6 +139,8 @@ yarn test:coverage
 - **Mock Support**: Repository interfaces enable easy mocking
 - **Component Testing**: Updated to use view models instead of raw API data
 - **Integration Testing**: End-to-end flows from UI to external APIs
+- **Modern JSX Transform**: Configured for automatic JSX runtime (React 17+)
+- **Clean Mock Setup**: Next.js Link component properly mocked for testing
 
 For detailed testing information, see [JEST_TESTING_GUIDE.md](./JEST_TESTING_GUIDE.md).
 

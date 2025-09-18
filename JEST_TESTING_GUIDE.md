@@ -84,7 +84,21 @@ module.exports = {
     "<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}",
   ],
   transform: {
-    "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { presets: ["next/babel"] }],
+    "^.+\\.(js|jsx|ts|tsx)$": [
+      "babel-jest",
+      {
+        presets: [
+          [
+            "next/babel",
+            {
+              "preset-react": {
+                runtime: "automatic",
+              },
+            },
+          ],
+        ],
+      },
+    ],
   },
   moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json"],
   coverageThreshold: {
@@ -119,8 +133,9 @@ jest.mock("next/router", () => ({
 
 // Mock Next.js Link component
 jest.mock("next/link", () => {
+  const React = require("react");
   return ({ children, href }) => {
-    return <a href={href}>{children}</a>;
+    return React.createElement("a", { href }, children);
   };
 });
 
@@ -139,6 +154,60 @@ Update your `package.json` scripts:
   }
 }
 ```
+
+## Recent Updates: Modern JSX Transform Configuration
+
+### Automatic JSX Runtime (React 17+)
+
+As of the latest update, this project has been configured to use React's automatic JSX runtime, which eliminates the need for explicit React imports in JSX files. This provides better performance and cleaner code.
+
+#### Key Changes Made:
+
+1. **Jest Configuration for Automatic JSX Runtime:**
+
+   ```javascript
+   // jest.config.js
+   transform: {
+     "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", {
+       presets: [["next/babel", {
+         "preset-react": {
+           runtime: "automatic"
+         }
+       }]]
+     }],
+   },
+   ```
+
+2. **Updated Mock Setup:**
+
+   ```javascript
+   // jest.setup.js
+   // Mock Next.js Link component with proper scope handling
+   jest.mock("next/link", () => {
+     const React = require("react"); // Import inside mock factory
+     return ({ children, href }) => {
+       return React.createElement("a", { href }, children);
+     };
+   });
+   ```
+
+3. **Removed Unnecessary React Imports:**
+   - Test files no longer need `import React from "react"`
+   - Component files automatically use modern JSX transform
+   - Only setup files import React when absolutely necessary
+
+#### Benefits:
+
+- **Performance**: Automatic JSX runtime is faster than classic runtime
+- **Cleaner Code**: No need for React imports in JSX files
+- **Modern Standards**: Uses React 17+ JSX transform features
+- **Better Tree Shaking**: Smaller bundle sizes
+
+#### Migration Notes:
+
+- If you encounter JSX transform warnings, ensure your test files don't have unnecessary React imports
+- The Next.js Link mock now properly handles React scope within Jest's mock factory
+- All component tests should work without modification after these changes
 
 ## Test Directory Structure
 
@@ -436,7 +505,6 @@ export default function Header() {
 
 ```tsx
 // src/components/Header/Header.test.tsx
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import Header from "./Header";
 
@@ -542,7 +610,6 @@ export default function StoryItem({ story }: { story: StoryViewModel }) {
 
 ```tsx
 // src/components/StoryItem/StoryItem.test.tsx
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import StoryItem from "./StoryItem";
 import { StoryViewModel } from "../../application/presenters";
@@ -670,7 +737,6 @@ export default function CommentComponent({
 
 ```tsx
 // src/components/Comment/Comment.test.tsx
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CommentComponent from "../Comment";
@@ -1168,12 +1234,14 @@ test("button click", async () => {
 
 ### Current Implementation Status
 
-This guide has been updated to reflect the Clean Architecture refactor with the following results:
+This guide has been updated to reflect the Clean Architecture refactor and recent JSX transform improvements:
 
 - **Clean Architecture Implementation**: Full separation of concerns across Domain, Application, Infrastructure, and Presentation layers
 - **Enhanced Testability**: Each architectural layer can be tested independently with proper mocking
 - **Improved Maintainability**: Clear boundaries between business logic, application logic, and external dependencies
 - **SWR Integration**: Custom hooks wrap Clean Architecture layers while preserving SWR's caching benefits
+- **Modern JSX Transform**: Configured for automatic JSX runtime (React 17+) with proper Jest integration
+- **Optimized Mock Setup**: Next.js Link component properly mocked with scope-aware implementation
 
 ### Key Implementation Details
 
@@ -1188,6 +1256,8 @@ This guide has been updated to reflect the Clean Architecture refactor with the 
 5. **Type Safety**: Full TypeScript support with proper interfaces for all architectural boundaries
 
 6. **Jest Configuration**: Updated module mapping to support Clean Architecture directory structure
+7. **Automatic JSX Runtime**: Configured Jest to use React's modern JSX transform for better performance
+8. **Scope-Aware Mocking**: Next.js Link mock properly handles Jest's module isolation requirements
 
 ### Test Execution Commands
 

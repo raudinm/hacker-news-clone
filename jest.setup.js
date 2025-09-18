@@ -16,8 +16,9 @@ jest.mock("next/router", () => ({
 
 // Mock Next.js Link component
 jest.mock("next/link", () => {
+  const React = require("react");
   return ({ children, href }) => {
-    return <a href={href}>{children}</a>;
+    return React.createElement("a", { href }, children);
   };
 });
 
