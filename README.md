@@ -1,6 +1,17 @@
 # Hacker News Clone
 
-A modern, responsive clone of Hacker News built with Next.js, TypeScript, and Tailwind CSS. This project fetches real-time data from the Hacker News API and provides a familiar interface for browsing stories, comments, and submitting new content.
+A modern, responsive clone of Hacker News built with Next.js, TypeScript, and Tailwind CSS following Clean Architecture principles. This project fetches real-time data from the Hacker News API and provides a familiar interface for browsing stories, comments, and submitting new content.
+
+## 🏗️ Architecture
+
+This project implements **Clean Architecture** to ensure separation of concerns, testability, and maintainability. The codebase is organized into four distinct layers:
+
+- **Domain Layer**: Business entities, use cases, and repository interfaces
+- **Application Layer**: Controllers, presenters, and custom hooks
+- **Infrastructure Layer**: External API clients and repository implementations
+- **Presentation Layer**: React components and UI logic
+
+For detailed information about the architecture, see [CLEAN_ARCHITECTURE_REFACTOR.md](./CLEAN_ARCHITECTURE_REFACTOR.md).
 
 ## 🚀 Features
 
@@ -18,10 +29,12 @@ A modern, responsive clone of Hacker News built with Next.js, TypeScript, and Ta
 
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
+- **Architecture**: Clean Architecture
 - **Styling**: Tailwind CSS
 - **Data Fetching**: SWR (for caching and revalidation)
 - **API**: Hacker News Firebase API
 - **Font**: Arial (matching original HN)
+- **Testing**: Jest with React Testing Library
 
 ## 📦 Installation
 
@@ -50,21 +63,86 @@ yarn dev
 
 ## 📁 Project Structure
 
+The project follows Clean Architecture principles with clear separation of concerns:
+
 ```
 src/
-├── app/
+├── domain/                 # Business Logic Layer
+│   ├── entities/           # Business entities with core logic
+│   │   ├── Story.ts        # Story entity with business methods
+│   │   ├── Comment.ts      # Comment entity with validation
+│   │   └── User.ts         # User entity with account logic
+│   ├── usecases/           # Application business rules
+│   │   ├── FetchTopStories.ts    # Top stories use case
+│   │   ├── FetchStoryDetails.ts  # Story details use case
+│   │   └── FetchComments.ts      # Comments use case
+│   └── repositories/       # Repository interfaces (contracts)
+│       ├── IStoryRepository.ts
+│       ├── ICommentRepository.ts
+│       └── IUserRepository.ts
+├── application/            # Application Logic Layer
+│   ├── controllers/        # Request/response handlers
+│   │   ├── StoryController.ts
+│   │   └── CommentController.ts
+│   ├── presenters/         # Data transformation for UI
+│   │   ├── StoryPresenter.ts
+│   │   └── CommentPresenter.ts
+│   └── hooks/              # SWR-powered custom hooks
+│       ├── useStories.ts
+│       └── useStoryDetails.ts
+├── infrastructure/         # External Concerns Layer
+│   ├── api/                # External API clients
+│   │   └── HackerNewsApiClient.ts
+│   └── repositories/       # Repository implementations
+│       ├── HackerNewsStoryRepository.ts
+│       ├── HackerNewsCommentRepository.ts
+│       └── HackerNewsUserRepository.ts
+├── components/             # Presentation Layer
+│   ├── Header.tsx          # Navigation header
+│   ├── StoryItem.tsx       # Story list item component
+│   └── Comment.tsx         # Recursive comment component
+├── app/                    # Next.js App Router pages
 │   ├── layout.tsx          # Root layout with header
 │   ├── page.tsx            # Main story feed
 │   ├── item/[id]/
 │   │   └── page.tsx        # Individual story page
 │   └── submit/
 │       └── page.tsx        # Submit story form
-├── components/
-│   ├── Header.tsx          # Navigation header
-│   ├── StoryItem.tsx       # Story list item component
-│   └── Comment.tsx         # Recursive comment component
 └── globals.css             # Global styles
 ```
+
+## 🧪 Testing Strategy
+
+The project implements comprehensive testing following Clean Architecture principles:
+
+### Test Coverage by Layer:
+
+- **Domain Layer**: Unit tests for entities, use cases, and repository interfaces
+- **Application Layer**: Integration tests for controllers, presenters, and hooks
+- **Infrastructure Layer**: Unit tests for repositories and API clients with mocking
+- **Presentation Layer**: Component tests with React Testing Library
+
+### Testing Commands:
+
+```bash
+# Run all tests
+yarn test
+
+# Run tests in watch mode
+yarn test:watch
+
+# Run tests with coverage
+yarn test:coverage
+```
+
+### Key Testing Features:
+
+- **Isolated Testing**: Each layer can be tested independently
+- **Mock Support**: Repository interfaces enable easy mocking
+- **Component Testing**: Updated to use view models instead of raw API data
+- **Integration Testing**: End-to-end flows from UI to external APIs
+
+For detailed testing information, see [JEST_TESTING_GUIDE.md](./JEST_TESTING_GUIDE.md).
 
 ## 🔧 Usage
 
@@ -96,7 +174,28 @@ The app uses the official Hacker News Firebase API:
 
 ## ⚡ Data Fetching with SWR
 
-This project uses SWR (stale-while-revalidate) for efficient data fetching and caching:
+This project uses SWR (stale-while-revalidate) integrated with Clean Architecture for efficient data fetching and caching:
+
+### Clean Architecture Integration:
+
+SWR is wrapped in custom hooks within the Application Layer, maintaining separation of concerns:
+
+```typescript
+// Application layer hook integrating SWR with Clean Architecture
+export const useTopStories = (limit: number = 30) => {
+  const { data, error, isLoading, mutate } = useSWR<StoryViewModel[]>(
+    ["top-stories", limit],
+    () => fetchTopStories(limit), // Uses Clean Architecture use case
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      refreshInterval: 300000,
+    }
+  );
+
+  return { stories: data || [], isLoading, error, mutate };
+};
+```
 
 ### Key Benefits:
 
@@ -106,12 +205,14 @@ This project uses SWR (stale-while-revalidate) for efficient data fetching and c
 - **Loading States**: Smooth loading indicators for better UX
 - **Request Deduplication**: Identical requests are automatically deduplicated
 - **Focus Revalidation**: Data refreshes when user returns to the tab
+- **Architecture Compliant**: Maintains Clean Architecture boundaries
 
 ### Configuration:
 
 - **Stories**: Refresh every 5 minutes with focus/reconnect revalidation
 - **Comments**: Cached with background updates for nested replies
 - **Error Recovery**: Automatic retry on failed requests
+- **Clean Separation**: SWR logic isolated from business logic
 
 ## 🎨 Styling
 

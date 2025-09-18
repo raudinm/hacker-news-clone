@@ -1,35 +1,14 @@
 import Link from "next/link";
+import { StoryViewModel } from "../application/presenters";
 
-interface Story {
-  id: number;
-  title: string;
-  url?: string;
-  score: number;
-  by: string;
-  time: number;
-  descendants?: number;
-}
-
-export default function StoryItem({ story }: { story: Story }) {
-  const timeAgo = (timestamp: number) => {
-    const now = Date.now() / 1000;
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60);
-    const hours = Math.floor(diff / 3600);
-    const days = Math.floor(diff / 86400);
-
-    if (days > 0) return `${days} days ago`;
-    if (hours > 0) return `${hours} hours ago`;
-    return `${minutes} minutes ago`;
-  };
-
+export default function StoryItem({ story }: { story: StoryViewModel }) {
   return (
     <div className="mb-4">
       <div className="flex items-start">
         <span className="text-gray-500 mr-2">{story.score}</span>
         <div>
           <h2 className="text-lg font-medium">
-            {story.url ? (
+            {story.hasExternalUrl ? (
               <a
                 href={story.url}
                 target="_blank"
@@ -48,9 +27,9 @@ export default function StoryItem({ story }: { story: Story }) {
             )}
           </h2>
           <p className="text-sm text-gray-600">
-            by {story.by} {timeAgo(story.time)} |{" "}
+            by {story.author} {story.timeAgo} |{" "}
             <Link href={`/item/${story.id}`} className="hover:underline">
-              {story.descendants || 0} comments
+              {story.commentCount} comments
             </Link>
           </p>
         </div>

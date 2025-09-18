@@ -1,6 +1,15 @@
-# Comprehensive Jest Testing Guide for React/Next.js UI Components
+# Comprehensive Jest Testing Guide for Clean Architecture Next.js
 
-This guide provides a detailed, step-by-step approach to setting up and implementing unit tests for UI components in a React/Next.js project using Jest. The guide is specifically tailored for a Next.js application with TypeScript, focusing on components like Header, StoryItem, and Comment. While focused on React/Next.js, the principles can be adapted to other frameworks like Vue, Angular, or Svelte.
+This guide provides a detailed, step-by-step approach to setting up and implementing comprehensive tests for a React/Next.js project following Clean Architecture principles. The guide covers testing across all architectural layers: Domain, Application, Infrastructure, and Presentation. The project uses Next.js 15 with TypeScript and implements Clean Architecture for optimal separation of concerns, testability, and maintainability.
+
+## Clean Architecture Testing Overview
+
+The testing strategy follows Clean Architecture principles with layered testing:
+
+- **Domain Layer**: Unit tests for entities, use cases, and repository interfaces
+- **Application Layer**: Integration tests for controllers, presenters, and custom hooks
+- **Infrastructure Layer**: Unit tests for repositories and external API clients
+- **Presentation Layer**: Component tests using React Testing Library
 
 ## Table of Contents
 
@@ -8,12 +17,13 @@ This guide provides a detailed, step-by-step approach to setting up and implemen
 2. [Installation](#installation)
 3. [Configuration](#configuration)
 4. [Test Directory Structure](#test-directory-structure)
-5. [Writing Unit Tests](#writing-unit-tests)
-6. [Mocking Dependencies](#mocking-dependencies)
-7. [Running Tests](#running-tests)
-8. [Best Practices](#best-practices)
-9. [CI/CD Integration](#cicd-integration)
-10. [Framework-Specific Adaptations](#framework-specific-adaptations)
+5. [Testing Clean Architecture Layers](#testing-clean-architecture-layers)
+6. [Writing Unit Tests](#writing-unit-tests)
+7. [Mocking Dependencies](#mocking-dependencies)
+8. [Running Tests](#running-tests)
+9. [Best Practices](#best-practices)
+10. [CI/CD Integration](#cicd-integration)
+11. [Framework-Specific Adaptations](#framework-specific-adaptations)
 
 ## Prerequisites
 
@@ -51,7 +61,7 @@ For Next.js specific testing utilities:
 
 ## Configuration
 
-Create a `jest.config.js` file in your project root:
+Create a `jest.config.js` file in your project root with Clean Architecture support:
 
 ```javascript
 module.exports = {
@@ -60,8 +70,15 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@/components/(.*)$": "<rootDir>/src/components/$1",
+    "^@/domain/(.*)$": "<rootDir>/src/domain/$1",
+    "^@/application/(.*)$": "<rootDir>/src/application/$1",
+    "^@/infrastructure/(.*)$": "<rootDir>/src/infrastructure/$1",
   },
-  collectCoverageFrom: ["src/**/*.{js,jsx,ts,tsx}", "!src/**/*.d.ts"],
+  collectCoverageFrom: [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/index.{js,ts}",
+  ],
   testMatch: [
     "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
     "<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}",
@@ -70,6 +87,14 @@ module.exports = {
     "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { presets: ["next/babel"] }],
   },
   moduleFileExtensions: ["js", "jsx", "ts", "tsx", "json"],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
 };
 ```
 
@@ -117,20 +142,252 @@ Update your `package.json` scripts:
 
 ## Test Directory Structure
 
-Organize your tests following these conventions:
+Organize your tests following Clean Architecture principles:
 
 ```
 src/
+├── domain/
+│   ├── entities/
+│   │   ├── Story.test.ts          # Entity unit tests
+│   │   ├── Comment.test.ts        # Entity unit tests
+│   │   └── User.test.ts           # Entity unit tests
+│   ├── usecases/
+│   │   ├── FetchTopStories.test.ts     # Use case unit tests
+│   │   ├── FetchStoryDetails.test.ts   # Use case unit tests
+│   │   └── FetchComments.test.ts       # Use case unit tests
+│   └── repositories/
+│       ├── IStoryRepository.test.ts    # Interface contract tests
+│       ├── ICommentRepository.test.ts  # Interface contract tests
+│       └── IUserRepository.test.ts     # Interface contract tests
+├── application/
+│   ├── controllers/
+│   │   ├── StoryController.test.ts     # Controller integration tests
+│   │   └── CommentController.test.ts   # Controller integration tests
+│   ├── presenters/
+│   │   ├── StoryPresenter.test.ts      # Presenter unit tests
+│   │   └── CommentPresenter.test.ts    # Presenter unit tests
+│   └── hooks/
+│       ├── useStories.test.ts          # Hook integration tests
+│       └── useStoryDetails.test.ts     # Hook integration tests
+├── infrastructure/
+│   ├── api/
+│   │   └── HackerNewsApiClient.test.ts # API client unit tests
+│   └── repositories/
+│       ├── HackerNewsStoryRepository.test.ts     # Repository unit tests
+│       ├── HackerNewsCommentRepository.test.ts   # Repository unit tests
+│       └── HackerNewsUserRepository.test.ts      # Repository unit tests
 ├── components/
 │   ├── Header/
 │   │   ├── Header.tsx
-│   │   └── Header.test.tsx
+│   │   └── Header.test.tsx           # Component tests
 │   ├── StoryItem/
 │   │   ├── StoryItem.tsx
-│   │   └── StoryItem.test.tsx
+│   │   └── StoryItem.test.tsx        # Component tests
 │   └── Comment/
 │       ├── Comment.tsx
-│       └── Comment.test.tsx
+│       └── Comment.test.tsx          # Component tests
+└── __tests__/
+    └── integration/
+        ├── StoryFlow.test.ts         # End-to-end story flow tests
+        └── CommentFlow.test.ts       # End-to-end comment flow tests
+```
+
+## Testing Clean Architecture Layers
+
+### Domain Layer Testing
+
+**Entities** - Test business logic and validation:
+
+```typescript
+// src/domain/entities/Story.test.ts
+import { StoryEntity } from "./Story";
+
+describe("StoryEntity", () => {
+  it("should calculate time ago correctly", () => {
+    const pastTime = Date.now() / 1000 - 3600; // 1 hour ago
+    const story = new StoryEntity(1, "Test Story", 42, "author", pastTime);
+
+    expect(story.getTimeAgo()).toBe("1 hours ago");
+  });
+
+  it("should detect external URLs", () => {
+    const storyWithUrl = new StoryEntity(
+      1,
+      "Test",
+      42,
+      "author",
+      Date.now() / 1000,
+      "https://example.com"
+    );
+    const storyWithoutUrl = new StoryEntity(
+      1,
+      "Test",
+      42,
+      "author",
+      Date.now() / 1000
+    );
+
+    expect(storyWithUrl.hasExternalUrl()).toBe(true);
+    expect(storyWithoutUrl.hasExternalUrl()).toBe(false);
+  });
+});
+```
+
+**Use Cases** - Test business rules with mocked repositories:
+
+```typescript
+// src/domain/usecases/FetchTopStories.test.ts
+import { FetchTopStoriesUseCase } from "./FetchTopStories";
+
+describe("FetchTopStoriesUseCase", () => {
+  it("should fetch top stories from repository", async () => {
+    const mockRepository = {
+      getTopStories: jest
+        .fn()
+        .mockResolvedValue([
+          new StoryEntity(1, "Story 1", 42, "author1", Date.now() / 1000),
+          new StoryEntity(2, "Story 2", 25, "author2", Date.now() / 1000),
+        ]),
+    };
+
+    const useCase = new FetchTopStoriesUseCase(mockRepository);
+    const result = await useCase.execute({ limit: 2 });
+
+    expect(result.stories).toHaveLength(2);
+    expect(mockRepository.getTopStories).toHaveBeenCalledWith(2);
+  });
+});
+```
+
+### Application Layer Testing
+
+**Controllers** - Test request/response handling:
+
+```typescript
+// src/application/controllers/StoryController.test.ts
+import { StoryController } from "./StoryController";
+
+describe("StoryController", () => {
+  it("should handle successful story fetch", async () => {
+    const controller = new StoryController();
+    const result = await controller.getTopStories(5);
+
+    expect(result.success).toBe(true);
+    expect(result.data).toBeDefined();
+  });
+
+  it("should handle repository errors gracefully", async () => {
+    // Mock repository to throw error
+    const controller = new StoryController();
+    const result = await controller.getTopStories(5);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+});
+```
+
+**Presenters** - Test data transformation:
+
+```typescript
+// src/application/presenters/StoryPresenter.test.ts
+import { StoryPresenter } from "./StoryPresenter";
+import { StoryEntity } from "../../domain/entities";
+
+describe("StoryPresenter", () => {
+  it("should transform StoryEntity to StoryViewModel", () => {
+    const story = new StoryEntity(
+      1,
+      "Test Story",
+      42,
+      "author",
+      Date.now() / 1000,
+      "https://example.com"
+    );
+    const viewModel = StoryPresenter.present(story);
+
+    expect(viewModel.id).toBe(1);
+    expect(viewModel.title).toBe("Test Story");
+    expect(viewModel.author).toBe("author");
+    expect(viewModel.hasExternalUrl).toBe(true);
+  });
+});
+```
+
+**Hooks** - Test SWR integration:
+
+```typescript
+// src/application/hooks/useStories.test.ts
+import { renderHook } from "@testing-library/react";
+import { useTopStories } from "./useStories";
+
+describe("useTopStories", () => {
+  it("should return stories from SWR cache", async () => {
+    const { result } = renderHook(() => useTopStories(5));
+
+    // Test loading state
+    expect(result.current.isLoading).toBe(true);
+
+    // Wait for data to load
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.stories).toBeDefined();
+  });
+});
+```
+
+### Infrastructure Layer Testing
+
+**API Client** - Test external API calls:
+
+```typescript
+// src/infrastructure/api/HackerNewsApiClient.test.ts
+import { HackerNewsApiClient } from "./HackerNewsApiClient";
+
+describe("HackerNewsApiClient", () => {
+  it("should fetch top story IDs", async () => {
+    const client = new HackerNewsApiClient();
+    global.fetch = jest.fn().mockResolvedValue({
+      json: () => Promise.resolve([1, 2, 3]),
+    });
+
+    const ids = await client.getTopStoryIds();
+    expect(ids).toEqual([1, 2, 3]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://hacker-news.firebaseio.com/v0/topstories.json"
+    );
+  });
+});
+```
+
+**Repositories** - Test data access with mocked API:
+
+```typescript
+// src/infrastructure/repositories/HackerNewsStoryRepository.test.ts
+import { HackerNewsStoryRepository } from "./HackerNewsStoryRepository";
+
+describe("HackerNewsStoryRepository", () => {
+  it("should get story by ID", async () => {
+    const mockApiClient = {
+      getItem: jest.fn().mockResolvedValue({
+        id: 1,
+        title: "Test Story",
+        score: 42,
+        by: "author",
+        time: Date.now() / 1000,
+        type: "story",
+      }),
+    };
+
+    const repository = new HackerNewsStoryRepository(mockApiClient);
+    const story = await repository.getStoryById(1);
+
+    expect(story).toBeDefined();
+    expect(story?.title).toBe("Test Story");
+  });
+});
 ```
 
 ## Writing Unit Tests
@@ -243,37 +500,16 @@ describe("Header", () => {
 ```tsx
 // src/components/StoryItem/StoryItem.tsx
 import Link from "next/link";
+import { StoryViewModel } from "../../application/presenters";
 
-interface Story {
-  id: number;
-  title: string;
-  url?: string;
-  score: number;
-  by: string;
-  time: number;
-  descendants?: number;
-}
-
-export default function StoryItem({ story }: { story: Story }) {
-  const timeAgo = (timestamp: number) => {
-    const now = Date.now() / 1000;
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60);
-    const hours = Math.floor(diff / 3600);
-    const days = Math.floor(diff / 86400);
-
-    if (days > 0) return `${days} days ago`;
-    if (hours > 0) return `${hours} hours ago`;
-    return `${minutes} minutes ago`;
-  };
-
+export default function StoryItem({ story }: { story: StoryViewModel }) {
   return (
     <div className="mb-4">
       <div className="flex items-start">
         <span className="text-gray-500 mr-2">{story.score}</span>
         <div>
           <h2 className="text-lg font-medium">
-            {story.url ? (
+            {story.hasExternalUrl ? (
               <a
                 href={story.url}
                 target="_blank"
@@ -292,9 +528,9 @@ export default function StoryItem({ story }: { story: Story }) {
             )}
           </h2>
           <p className="text-sm text-gray-600">
-            by {story.by} {timeAgo(story.time)} |{" "}
+            by {story.author} {story.timeAgo} |{" "}
             <Link href={`/item/${story.id}`} className="hover:underline">
-              {story.descendants || 0} comments
+              {story.commentCount} comments
             </Link>
           </p>
         </div>
@@ -309,16 +545,19 @@ export default function StoryItem({ story }: { story: Story }) {
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import StoryItem from "./StoryItem";
+import { StoryViewModel } from "../../application/presenters";
 
 describe("StoryItem", () => {
-  const mockStory = {
+  const mockStory: StoryViewModel = {
     id: 123,
     title: "Test Story",
     url: "https://example.com",
     score: 42,
-    by: "testuser",
-    time: Date.now() / 1000 - 3600, // 1 hour ago
-    descendants: 5,
+    author: "testuser",
+    timeAgo: "1 hours ago",
+    commentCount: 5,
+    hasExternalUrl: true,
+    displayUrl: "https://example.com",
   };
 
   it("renders story with external link", () => {
@@ -331,7 +570,12 @@ describe("StoryItem", () => {
   });
 
   it("renders story with internal link when no URL", () => {
-    const storyWithoutUrl = { ...mockStory, url: undefined };
+    const storyWithoutUrl: StoryViewModel = {
+      ...mockStory,
+      url: undefined,
+      hasExternalUrl: false,
+      displayUrl: "/item/123",
+    };
     render(<StoryItem story={storyWithoutUrl} />);
 
     const titleLink = screen.getByText("Test Story").closest("a");
@@ -360,7 +604,10 @@ describe("StoryItem", () => {
   });
 
   it("handles story with no descendants", () => {
-    const storyWithoutDescendants = { ...mockStory, descendants: undefined };
+    const storyWithoutDescendants: StoryViewModel = {
+      ...mockStory,
+      commentCount: 0,
+    };
     render(<StoryItem story={storyWithoutDescendants} />);
 
     expect(screen.getByText("0 comments")).toBeInTheDocument();
@@ -388,77 +635,33 @@ describe("StoryItem", () => {
 
 ```tsx
 // src/components/Comment/Comment.tsx
-"use client";
-
-import useSWR from "swr";
-
-interface Comment {
-  id: number;
-  by?: string;
-  time: number;
-  text?: string;
-  kids?: number[];
-}
-
-// Fetcher for comment replies
-const fetchReplies = async (kids: number[]): Promise<Comment[]> => {
-  if (!kids || kids.length === 0) return [];
-  const replyPromises = kids.map((id) =>
-    fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((res) =>
-      res.json()
-    )
-  );
-  return Promise.all(replyPromises);
-};
+import { CommentViewModel } from "../../application/presenters";
 
 export default function CommentComponent({
   comment,
   level = 0,
 }: {
-  comment: Comment;
+  comment: CommentViewModel;
   level?: number;
 }) {
-  const { data: replies, isLoading } = useSWR<Comment[]>(
-    comment.kids ? `replies-${comment.id}` : null,
-    () => fetchReplies(comment.kids!),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-    }
-  );
-
-  const timeAgo = (timestamp: number) => {
-    const now = Date.now() / 1000;
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60);
-    const hours = Math.floor(diff / 3600);
-    const days = Math.floor(diff / 86400);
-
-    if (days > 0) return `${days} days ago`;
-    if (hours > 0) return `${hours} hours ago`;
-    return `${minutes} minutes ago`;
-  };
-
-  if (!comment.text) return null; // deleted or no text
+  if (!comment.hasContent) return null;
 
   return (
     <div
-      style={{ marginLeft: level * 20 }}
+      style={{ marginLeft: comment.level ?? level * 20 }}
       className="mb-4 border-l-2 border-gray-200 pl-4"
     >
       <p className="text-sm text-gray-600 mb-1">
-        by {comment.by || "anonymous"} {timeAgo(comment.time)}
+        by {comment.author} {comment.timeAgo}
       </p>
       <div
-        dangerouslySetInnerHTML={{ __html: comment.text }}
+        dangerouslySetInnerHTML={{ __html: comment.text || "" }}
         className="text-sm"
       />
-      {isLoading ? (
-        <div className="text-sm text-gray-500 mt-2">Loading replies...</div>
-      ) : (
-        replies?.map((reply) => (
-          <CommentComponent key={reply.id} comment={reply} level={level + 1} />
-        ))
+      {comment.hasReplies && (
+        <div className="text-sm text-gray-500 mt-2">
+          {comment.replyCount} replies
+        </div>
       )}
     </div>
   );
@@ -471,32 +674,20 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CommentComponent from "../Comment";
-
-// Mock SWR
-jest.mock("swr");
+import { CommentViewModel } from "../../application/presenters";
 
 describe("CommentComponent", () => {
-  const mockComment = {
+  const mockComment: CommentViewModel = {
     id: 456,
-    by: "commenter",
-    time: Date.now() / 1000 - 1800, // 30 minutes ago
+    author: "commenter",
+    timeAgo: "30 minutes ago",
     text: "This is a test comment",
-    kids: [],
+    hasContent: true,
+    replyCount: 0,
+    hasReplies: false,
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("renders comment with author and time", () => {
-    // Mock SWR to return no replies
-    const mockUseSWR = jest.fn(() => ({
-      data: [],
-      error: undefined,
-      isLoading: false,
-    }));
-    require("swr").default = mockUseSWR;
-
     render(<CommentComponent comment={mockComment} />);
 
     expect(screen.getByText(/by commenter/)).toBeInTheDocument();
@@ -505,13 +696,10 @@ describe("CommentComponent", () => {
   });
 
   it("renders anonymous for comments without author", () => {
-    const commentWithoutAuthor = { ...mockComment, by: undefined };
-    const mockUseSWR = jest.fn(() => ({
-      data: [],
-      error: undefined,
-      isLoading: false,
-    }));
-    require("swr").default = mockUseSWR;
+    const commentWithoutAuthor: CommentViewModel = {
+      ...mockComment,
+      author: "anonymous",
+    };
 
     render(<CommentComponent comment={commentWithoutAuthor} />);
 
@@ -519,29 +707,26 @@ describe("CommentComponent", () => {
   });
 
   it("does not render deleted comments", () => {
-    const deletedComment = { ...mockComment, text: undefined };
-    const mockUseSWR = jest.fn(() => ({
-      data: [],
-      error: undefined,
-      isLoading: false,
-    }));
-    require("swr").default = mockUseSWR;
+    const deletedComment: CommentViewModel = {
+      ...mockComment,
+      hasContent: false,
+      text: undefined,
+    };
 
     const { container } = render(<CommentComponent comment={deletedComment} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows loading state for replies", () => {
-    const mockUseSWR = jest.fn(() => ({
-      data: undefined,
-      error: undefined,
-      isLoading: true,
-    }));
-    require("swr").default = mockUseSWR;
+  it("shows reply count when comment has replies", () => {
+    const commentWithReplies: CommentViewModel = {
+      ...mockComment,
+      hasReplies: true,
+      replyCount: 3,
+    };
 
-    render(<CommentComponent comment={mockComment} />);
+    render(<CommentComponent comment={commentWithReplies} />);
 
-    expect(screen.getByText("Loading replies...")).toBeInTheDocument();
+    expect(screen.getByText("3 replies")).toBeInTheDocument();
   });
 });
 ```
@@ -983,23 +1168,26 @@ test("button click", async () => {
 
 ### Current Implementation Status
 
-This guide has been fully implemented in the project with the following results:
+This guide has been updated to reflect the Clean Architecture refactor with the following results:
 
-- **16 tests passing** across 3 test suites
-- **67.56% overall component coverage**
-- **100% coverage** for Header component (5 tests)
-- **83.33% coverage** for StoryItem component (7 tests)
-- **58.33% coverage** for Comment component (4 tests)
+- **Clean Architecture Implementation**: Full separation of concerns across Domain, Application, Infrastructure, and Presentation layers
+- **Enhanced Testability**: Each architectural layer can be tested independently with proper mocking
+- **Improved Maintainability**: Clear boundaries between business logic, application logic, and external dependencies
+- **SWR Integration**: Custom hooks wrap Clean Architecture layers while preserving SWR's caching benefits
 
 ### Key Implementation Details
 
-1. **Inline Mocking Strategy**: Mocking is implemented directly within test files using `jest.mock()` at the top of each test file, followed by runtime mocking with `require()` for SWR hooks to avoid memory issues.
+1. **Layered Testing Strategy**: Tests are organized by architectural layer (Domain, Application, Infrastructure, Presentation)
 
-2. **Memory-Safe Testing**: Comment component tests were optimized to prevent memory leaks by avoiding complex recursive rendering tests and focusing on core functionality.
+2. **Repository Pattern**: Interfaces in the Domain layer enable easy mocking and testing of data access logic
 
-3. **Yarn Integration**: All package management and test execution commands use yarn as specified, with proper CI/CD cache configuration.
+3. **Presenter Pattern**: Application layer presenters transform domain entities into UI-friendly view models
 
-4. **Next.js 15 Compatibility**: Full compatibility with Next.js 15, React 19, and TypeScript, using jsdom for DOM simulation.
+4. **Custom Hooks**: SWR integration is wrapped in custom hooks that use Clean Architecture controllers
+
+5. **Type Safety**: Full TypeScript support with proper interfaces for all architectural boundaries
+
+6. **Jest Configuration**: Updated module mapping to support Clean Architecture directory structure
 
 ### Test Execution Commands
 

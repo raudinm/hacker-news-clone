@@ -2,32 +2,20 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CommentComponent from "../Comment";
-
-// Mock SWR
-jest.mock("swr");
+import { CommentViewModel } from "../../application/presenters";
 
 describe("CommentComponent", () => {
-  const mockComment = {
+  const mockComment: CommentViewModel = {
     id: 456,
-    by: "commenter",
-    time: Date.now() / 1000 - 1800, // 30 minutes ago
+    author: "commenter",
+    timeAgo: "30 minutes ago",
     text: "This is a test comment",
-    kids: [],
+    hasContent: true,
+    replyCount: 0,
+    hasReplies: false,
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("renders comment with author and time", () => {
-    // Mock SWR to return no replies
-    const mockUseSWR = jest.fn(() => ({
-      data: [],
-      error: undefined,
-      isLoading: false,
-    }));
-    require("swr").default = mockUseSWR;
-
     render(<CommentComponent comment={mockComment} />);
 
     expect(screen.getByText(/by commenter/)).toBeInTheDocument();
@@ -36,13 +24,10 @@ describe("CommentComponent", () => {
   });
 
   it("renders anonymous for comments without author", () => {
-    const commentWithoutAuthor = { ...mockComment, by: undefined };
-    const mockUseSWR = jest.fn(() => ({
-      data: [],
-      error: undefined,
-      isLoading: false,
-    }));
-    require("swr").default = mockUseSWR;
+    const commentWithoutAuthor: CommentViewModel = {
+      ...mockComment,
+      author: "anonymous",
+    };
 
     render(<CommentComponent comment={commentWithoutAuthor} />);
 
@@ -50,28 +35,25 @@ describe("CommentComponent", () => {
   });
 
   it("does not render deleted comments", () => {
-    const deletedComment = { ...mockComment, text: undefined };
-    const mockUseSWR = jest.fn(() => ({
-      data: [],
-      error: undefined,
-      isLoading: false,
-    }));
-    require("swr").default = mockUseSWR;
+    const deletedComment: CommentViewModel = {
+      ...mockComment,
+      hasContent: false,
+      text: undefined,
+    };
 
     const { container } = render(<CommentComponent comment={deletedComment} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows loading state for replies", () => {
-    const mockUseSWR = jest.fn(() => ({
-      data: undefined,
-      error: undefined,
-      isLoading: true,
-    }));
-    require("swr").default = mockUseSWR;
+  it("shows reply count when comment has replies", () => {
+    const commentWithReplies: CommentViewModel = {
+      ...mockComment,
+      hasReplies: true,
+      replyCount: 3,
+    };
 
-    render(<CommentComponent comment={mockComment} />);
+    render(<CommentComponent comment={commentWithReplies} />);
 
-    expect(screen.getByText("Loading replies...")).toBeInTheDocument();
+    expect(screen.getByText("3 replies")).toBeInTheDocument();
   });
 });

@@ -2,16 +2,19 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import StoryItem from "../StoryItem";
+import { StoryViewModel } from "../../application/presenters";
 
 describe("StoryItem", () => {
-  const mockStory = {
+  const mockStory: StoryViewModel = {
     id: 123,
     title: "Test Story",
     url: "https://example.com",
     score: 42,
-    by: "testuser",
-    time: Date.now() / 1000 - 3600, // 1 hour ago
-    descendants: 5,
+    author: "testuser",
+    timeAgo: "1 hours ago",
+    commentCount: 5,
+    hasExternalUrl: true,
+    displayUrl: "https://example.com",
   };
 
   it("renders story with external link", () => {
@@ -24,7 +27,12 @@ describe("StoryItem", () => {
   });
 
   it("renders story with internal link when no URL", () => {
-    const storyWithoutUrl = { ...mockStory, url: undefined };
+    const storyWithoutUrl: StoryViewModel = {
+      ...mockStory,
+      url: undefined,
+      hasExternalUrl: false,
+      displayUrl: "/item/123",
+    };
     render(<StoryItem story={storyWithoutUrl} />);
 
     const titleLink = screen.getByText("Test Story").closest("a");
@@ -53,7 +61,10 @@ describe("StoryItem", () => {
   });
 
   it("handles story with no descendants", () => {
-    const storyWithoutDescendants = { ...mockStory, descendants: undefined };
+    const storyWithoutDescendants: StoryViewModel = {
+      ...mockStory,
+      commentCount: 0,
+    };
     render(<StoryItem story={storyWithoutDescendants} />);
 
     expect(screen.getByText("0 comments")).toBeInTheDocument();

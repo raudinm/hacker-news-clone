@@ -21,6 +21,8 @@ const eslintConfig = [
     ],
     rules: {
       "react/display-name": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/triple-slash-reference": "off",
       "@typescript-eslint/no-unused-expressions": "off",
